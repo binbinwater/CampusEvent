@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}删除活动 · CampusEvent{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb">
+    <a href="{{ url_for('main.activities') }}">活动列表</a>
+    <span>/</span>
+    <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}">{{ activity.title }}</a>
+    <span>/</span>
+    <span>删除活动</span>
+  </div>
+
+  <section class="panel confirm-panel">
+    <p class="eyebrow">管理员操作</p>
+    <h1>确认删除活动？</h1>
+    <div class="confirm-subject">
+      <strong>{{ activity.title }}</strong>
+      <span class="muted">{{ activity.start_at|datetime_cn }} · {{ activity.location }}</span>
+    </div>
+
+    {% if activity.registration_count %}
+      <div class="form-error-summary" role="alert">
+        该活动已有 {{ activity.registration_count }} 条报名记录，按业务规则不能删除。
+        已产生的报名历史需要保留；可以保留活动并停止新增报名。
+      </div>
+      <div class="form-actions">
+        <a class="button button-primary" href="{{ url_for('main.activity_detail', activity_id=activity.id) }}">返回活动详情</a>
+      </div>
+    {% else %}
+      <p class="muted">删除后活动信息无法恢复；当前没有报名记录。</p>
+      <form method="post" action="{{ url_for('main.activity_delete', activity_id=activity.id) }}" class="form-actions">
+        <button class="button button-danger" type="submit">确认删除</button>
+        <a class="button button-ghost" href="{{ url_for('main.activity_detail', activity_id=activity.id) }}">取消</a>
+      </form>
+    {% endif %}
+  </section>
+{% endblock %}

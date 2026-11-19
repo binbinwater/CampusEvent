@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} · CampusEvent{% endblock %}
+
+{% block content %}
+  <section class="panel error-panel">
+    <p class="eyebrow">HTTP {{ code }}</p>
+    <h1>{{ title }}</h1>
+    <p class="muted">{{ message }}</p>
+    <a class="button button-primary" href="{{ url_for('main.activities') if current_user else url_for('auth.login') }}">
+      返回{{ '活动列表' if current_user else '登录' }}
+    </a>
+  </section>
+{% endblock %}

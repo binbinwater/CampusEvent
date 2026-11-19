@@ -1,0 +1,7 @@
+{% macro status_badge(status) -%}
+  <span class="badge {{ status|status_class }}">{{ status|status_label }}</span>
+{%- endmacro %}
+
+{% macro policy_badge(policy) -%}
+  <span class="badge badge-policy">{{ policy|policy_label }}</span>
+{%- endmacro %}

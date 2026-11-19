@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+{% block title %}审批中心 · CampusEvent{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">管理员中心</p>
+      <h1>审批与活动概览</h1>
+      <p class="muted">审批待审核报名；统计只把“已通过”计入名额占用。</p>
+    </div>
+    <a class="button button-primary" href="{{ url_for('main.activity_new') }}">+ 新建活动</a>
+  </section>
+
+  <section class="stats-grid stats-grid-four" aria-label="管理员统计">
+    <article class="stat-card"><span class="stat-label">活动总数</span><strong class="stat-value">{{ total_activities }}</strong></article>
+    <article class="stat-card"><span class="stat-label">报名总数</span><strong class="stat-value">{{ total_registrations }}</strong></article>
+    <article class="stat-card"><span class="stat-label">已通过</span><strong class="stat-value">{{ approved_total }}</strong></article>
+    <article class="stat-card stat-card-accent"><span class="stat-label">待审核</span><strong class="stat-value">{{ pending|length }}</strong></article>
+  </section>
+
+  <section class="panel dashboard-panel">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">审批队列</p>
+        <h2>待审核报名</h2>
+      </div>
+      <span class="muted">{{ pending|length }} 条</span>
+    </div>
+    {% if pending %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>学生</th><th>活动</th><th>提交时间</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            {% for registration in pending %}
+              <tr>
+                <td>
+                  <strong>{{ registration.student_name }}</strong>
+                  <span class="muted tiny">{{ registration.student_id }}</span>
+                </td>
+                <td>
+                  <a class="table-title" href="{{ url_for('main.activity_detail', activity_id=registration.activity_id) }}">
+                    {{ registration.activity_title }}
+                  </a>
+                  <span class="muted tiny">{{ registration.activity_start_at|datetime_cn }}</span>
+                </td>
+                <td class="nowrap">{{ registration.created_at|timestamp_cn }}</td>
+                <td>
+                  <div class="inline-actions">
+                    <form method="post" action="{{ url_for('main.approve', registration_id=registration.id) }}">
+                      <input type="hidden" name="next" value="{{ request.path }}">
+                      <button class="button button-small button-primary" type="submit">批准</button>
+                    </form>
+                    <form method="post" action="{{ url_for('main.reject', registration_id=registration.id) }}">
+                      <input type="hidden" name="next" value="{{ request.path }}">
+                      <button class="button button-small button-danger-ghost" type="submit">拒绝</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted empty-inline">当前没有待审核报名。</p>
+    {% endif %}
+  </section>
+
+  <section class="panel dashboard-panel">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">活动列表</p>
+        <h2>名额与报名</h2>
+      </div>
+    </div>
+    {% if activities %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>活动</th><th>报名方式</th><th>已通过</th><th>待审核</th><th>剩余</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            {% for activity in activities %}
+              <tr>
+                <td>
+                  <a class="table-title" href="{{ url_for('main.activity_detail', activity_id=activity.id) }}">{{ activity.title }}</a>
+                  <span class="muted tiny">{{ activity.start_at|datetime_cn }} · {{ activity.location }}</span>
+                </td>
+                <td>{{ activity.policy_type|policy_label }}</td>
+                <td>{{ activity.approved_count }} / {{ activity.capacity }}</td>
+                <td>{{ activity.pending_count }}</td>
+                <td>{{ activity.remaining }}</td>
+                <td>
+                  <div class="inline-actions">
+                    <a class="text-link" href="{{ url_for('main.activity_edit', activity_id=activity.id) }}">编辑</a>
+                    <a class="text-link" href="{{ url_for('main.activity_detail', activity_id=activity.id) }}">管理</a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted empty-inline">还没有活动。</p>
+    {% endif %}
+  </section>
+{% endblock %}

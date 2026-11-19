@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ '新建活动' if mode == 'create' else '编辑活动' }} · CampusEvent{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb">
+    <a href="{{ url_for('main.activities') }}">活动列表</a>
+    <span>/</span>
+    {% if activity %}<a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}">{{ activity.title }}</a><span>/</span>{% endif %}
+    <span>{{ '新建活动' if mode == 'create' else '编辑活动' }}</span>
+  </div>
+
+  <section class="form-layout">
+    <div class="form-intro">
+      <p class="eyebrow">管理员操作</p>
+      <h1>{{ '新建活动' if mode == 'create' else '编辑活动' }}</h1>
+      <p class="muted">
+        设置活动时间、容量和报名方式。报名方式决定新报名进入“已通过”还是“待审核”。
+      </p>
+      {% if mode == 'edit' %}
+        <div class="note-box">
+          当前已通过 {{ activity.approved_count }} 人。人数上限不能低于这个数量。
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="panel form-panel">
+      {% if errors %}
+        <div class="form-error-summary" role="alert">
+          <strong>请修正以下问题：</strong>
+          <ul>
+            {% for message in errors.values() %}<li>{{ message }}</li>{% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <form method="post"
+            action="{% if mode == 'create' %}{{ url_for('main.activity_new') }}{% else %}{{ url_for('main.activity_edit', activity_id=activity.id) }}{% endif %}"
+            novalidate>
+        <div class="field">
+          <label for="title">活动名称 <span class="required">*</span></label>
+          <input id="title" name="title" value="{{ form.title }}" maxlength="100" required autofocus
+                 {% if errors.title %}aria-invalid="true" aria-describedby="title-error"{% endif %}>
+          {% if errors.title %}<p class="field-error" id="title-error">{{ errors.title }}</p>{% endif %}
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="category">活动类型 <span class="required">*</span></label>
+            <input id="category" name="category" value="{{ form.category }}" maxlength="40" required
+                   placeholder="例如：讲座、志愿、文体" {% if errors.category %}aria-invalid="true" aria-describedby="category-error"{% endif %}>
+            {% if errors.category %}<p class="field-error" id="category-error">{{ errors.category }}</p>{% endif %}
+          </div>
+          <div class="field">
+            <label for="location">活动地点 <span class="required">*</span></label>
+            <input id="location" name="location" value="{{ form.location }}" maxlength="100" required
+                   {% if errors.location %}aria-invalid="true" aria-describedby="location-error"{% endif %}>
+            {% if errors.location %}<p class="field-error" id="location-error">{{ errors.location }}</p>{% endif %}
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="start_at">活动开始时间 <span class="required">*</span></label>
+            <input id="start_at" name="start_at" type="datetime-local" value="{{ form.start_at }}" required
+                   {% if errors.start_at %}aria-invalid="true" aria-describedby="start_at-error"{% endif %}>
+            {% if errors.start_at %}<p class="field-error" id="start_at-error">{{ errors.start_at }}</p>{% endif %}
+          </div>
+          <div class="field">
+            <label for="capacity">人数上限 <span class="required">*</span></label>
+            <input id="capacity" name="capacity" type="number" min="1" max="10000" value="{{ form.capacity }}" required
+                   {% if errors.capacity %}aria-invalid="true" aria-describedby="capacity-error"{% endif %}>
+            {% if errors.capacity %}<p class="field-error" id="capacity-error">{{ errors.capacity }}</p>{% endif %}
+          </div>
+        </div>
+
+        <fieldset class="field policy-field">
+          <legend>报名方式 <span class="required">*</span></legend>
+          <label class="radio-card">
+            <input type="radio" name="policy_type" value="direct" {% if form.policy_type == 'direct' %}checked{% endif %}>
+            <span><strong>直接报名</strong><small>名额充足时立即通过</small></span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="policy_type" value="review" {% if form.policy_type == 'review' %}checked{% endif %}>
+            <span><strong>管理员审核</strong><small>先进入待审核，批准时再检查名额</small></span>
+          </label>
+          {% if errors.policy_type %}<p class="field-error">{{ errors.policy_type }}</p>{% endif %}
+        </fieldset>
+
+        <div class="form-actions">
+          <button class="button button-primary" type="submit">{{ '创建活动' if mode == 'create' else '保存修改' }}</button>
+          <a class="button button-ghost"
+             href="{% if activity %}{{ url_for('main.activity_detail', activity_id=activity.id) }}{% else %}{{ url_for('main.activities') }}{% endif %}">取消</a>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}

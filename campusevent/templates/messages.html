@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}站内消息 · CampusEvent{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">站内消息</p>
+      <h1>通知列表</h1>
+      <p class="muted">报名、审核和取消结果由通知观察者写入。</p>
+    </div>
+    {% if unread_count %}
+      <form method="post" action="{{ url_for('main.messages_read') }}">
+        <button class="button button-ghost" type="submit">全部标记已读（{{ unread_count }}）</button>
+      </form>
+    {% endif %}
+  </section>
+
+  {% if messages %}
+    <div class="message-list">
+      {% for message in messages %}
+        <article class="message-card {{ 'message-unread' if not message.is_read else '' }}">
+          <div class="message-dot" aria-hidden="true"></div>
+          <div class="message-body">
+            <div class="message-head">
+              <strong>{{ message.activity_title or '活动通知' }}</strong>
+              <span class="muted tiny">{{ message.created_at|timestamp_cn }}</span>
+            </div>
+            <p>{{ message.content }}</p>
+            {% if message.activity_id %}
+              <a class="text-link" href="{{ url_for('main.activity_detail', activity_id=message.activity_id) }}">查看活动</a>
+            {% endif %}
+          </div>
+          {% if not message.is_read %}<span class="unread-tag">未读</span>{% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <section class="panel empty-state">
+      <p class="eyebrow">收件箱为空</p>
+      <h2>还没有站内消息</h2>
+      <p class="muted">报名或审核状态变化后，通知会出现在这里。</p>
+      <a class="button button-primary" href="{{ url_for('main.activities') }}">浏览活动</a>
+    </section>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, policy_badge %}
+{% block title %}活动列表 · CampusEvent{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">校园活动</p>
+      <h1>{{ '活动管理' if current_user.role == 'admin' else '发现活动' }}</h1>
+      <p class="muted">
+        {% if current_user.role == 'admin' %}
+          创建活动、检查名额并处理报名审核。
+        {% else %}
+          浏览活动、提交报名并查看自己的报名状态。
+        {% endif %}
+      </p>
+    </div>
+    {% if current_user.role == 'admin' %}
+      <a class="button button-primary" href="{{ url_for('main.activity_new') }}">+ 新建活动</a>
+    {% endif %}
+  </section>
+
+  <form class="search-bar panel" method="get" action="{{ url_for('main.activities') }}" role="search">
+    <label for="q">按活动名称筛选</label>
+    <div class="search-controls">
+      <input id="q" name="q" value="{{ query }}" placeholder="例如：迎新、讲座、志愿活动" maxlength="100">
+      <button class="button button-primary" type="submit">搜索</button>
+      {% if query %}<a class="button button-ghost" href="{{ url_for('main.activities') }}">清除</a>{% endif %}
+    </div>
+  </form>
+
+  <div class="list-meta">
+    <span>共 {{ rows|length }} 个活动</span>
+    {% if query %}<span class="muted">筛选：“{{ query }}”</span>{% endif %}
+  </div>
+
+  {% if rows %}
+    <div class="activity-grid">
+      {% for row in rows %}
+        {% set activity = row.activity %}
+        <article class="activity-card">
+          <div class="card-accent"></div>
+          <div class="card-topline">
+            <span class="category-tag">{{ activity.category }}</span>
+            {{ policy_badge(activity.policy_type) }}
+          </div>
+          <h2><a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}">{{ activity.title }}</a></h2>
+          <div class="event-meta">
+            <span><span class="meta-label">时间</span>{{ activity.start_at|datetime_cn }}</span>
+            <span><span class="meta-label">地点</span>{{ activity.location }}</span>
+          </div>
+
+          <div class="capacity-line">
+            <span>已通过 <strong>{{ activity.approved_count }}</strong> / {{ activity.capacity }}</span>
+            <span class="{{ 'text-danger' if activity.is_full else 'text-ok' }}">
+              {{ '名额已满' if activity.is_full else ('剩余 ' ~ activity.remaining ~ ' 个名额') }}
+            </span>
+          </div>
+          <div class="capacity-track" aria-hidden="true">
+            <span style="width: {{ ((activity.approved_count / activity.capacity) * 100)|round(0, 'floor') }}%"></span>
+          </div>
+
+          <div class="card-footer">
+            {% if current_user.role == 'admin' %}
+              <div class="card-admin-meta">
+                <span>待审核 <strong>{{ activity.pending_count }}</strong></span>
+                <span>报名总数 {{ activity.registration_count }}</span>
+              </div>
+              <div class="card-actions">
+                <a class="text-link" href="{{ url_for('main.activity_edit', activity_id=activity.id) }}">编辑</a>
+                <a class="button button-small button-ghost" href="{{ url_for('main.activity_detail', activity_id=activity.id) }}">管理</a>
+              </div>
+            {% else %}
+              <div class="student-state">
+                {% if row.my_registration %}
+                  <span class="muted tiny">最近报名</span>
+                  {{ status_badge(row.my_registration.status) }}
+                {% elif row.started %}
+                  <span class="badge badge-muted">已开始</span>
+                {% elif activity.is_full %}
+                  <span class="badge badge-muted">名额已满</span>
+                {% else %}
+                  <span class="muted tiny">开放报名中</span>
+                {% endif %}
+              </div>
+              <a class="button button-small {{ 'button-primary' if not row.started and not activity.is_full and not row.my_registration else 'button-ghost' }}"
+                 href="{{ url_for('main.activity_detail', activity_id=activity.id) }}">
+                {{ '查看详情' if row.my_registration or row.started or activity.is_full else '查看并报名' }}
+              </a>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <section class="panel empty-state">
+      <p class="eyebrow">暂无结果</p>
+      <h2>{{ '还没有活动' if not query else '没有匹配的活动' }}</h2>
+      <p class="muted">
+        {% if query %}
+          尝试更换关键词，或清除筛选查看全部活动。
+        {% elif current_user.role == 'admin' %}
+          创建第一个校园活动，然后学生就可以报名。
+        {% else %}
+          管理员发布活动后会显示在这里。
+        {% endif %}
+      </p>
+      {% if query %}
+        <a class="button button-ghost" href="{{ url_for('main.activities') }}">清除筛选</a>
+      {% elif current_user.role == 'admin' %}
+        <a class="button button-primary" href="{{ url_for('main.activity_new') }}">新建活动</a>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}

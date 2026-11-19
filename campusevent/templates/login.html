@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}登录 · CampusEvent{% endblock %}
+
+{% block content %}
+  <section class="login-layout">
+    <div class="login-copy">
+      <p class="eyebrow">软件工程实验二</p>
+      <h1>校园活动<br>报名与管理</h1>
+      <p class="lead">
+        用策略模式表达两类报名规则，用观察者模式将报名事务与站内通知解耦。
+      </p>
+      <div class="feature-list">
+        <span>直接报名自动通过</span>
+        <span>审核型报名占用名额前复核</span>
+        <span>报名结果写入站内消息</span>
+      </div>
+      <p class="muted small-note">固定演示账号 · 无注册 · 无第三方登录</p>
+    </div>
+
+    <div class="login-card panel">
+      <div class="login-card-head">
+        <p class="eyebrow">安全登录</p>
+        <h2>登录 CampusEvent</h2>
+        <p class="muted">请选择下方任一演示账号。</p>
+      </div>
+
+      {% if error %}
+        <div class="form-error-summary" role="alert">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('auth.login') }}" class="login-form">
+        <label for="username">用户名</label>
+        <input id="username" name="username" value="{{ username }}" required autofocus autocomplete="username">
+
+        <label for="password">密码</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password">
+
+        <button class="button button-primary button-wide" type="submit">登录</button>
+      </form>
+
+      <div class="demo-accounts">
+        <h3>演示账号</h3>
+        <table>
+          <thead>
+            <tr><th>账号</th><th>密码</th><th>身份</th></tr>
+          </thead>
+          <tbody>
+            {% for username, password, label in hints %}
+              <tr>
+                <td><code>{{ username }}</code></td>
+                <td><code>{{ password }}</code></td>
+                <td>{{ label }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="muted tiny">演示系统：请勿在公网环境使用真实密码。</p>
+      </div>
+    </div>
+  </section>
+{% endblock %}

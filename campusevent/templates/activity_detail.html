@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, policy_badge %}
+{% block title %}{{ activity.title }} · CampusEvent{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb">
+    <a href="{{ url_for('main.activities') }}">活动列表</a>
+    <span>/</span>
+    <span>活动详情</span>
+  </div>
+
+  <section class="detail-hero">
+    <div>
+      <div class="badge-row">
+        <span class="category-tag">{{ activity.category }}</span>
+        {{ policy_badge(activity.policy_type) }}
+        {% if started %}<span class="badge badge-muted">已开始</span>{% endif %}
+      </div>
+      <h1>{{ activity.title }}</h1>
+      <div class="detail-meta">
+        <span><span class="meta-label">时间</span>{{ activity.start_at|datetime_cn }}</span>
+        <span><span class="meta-label">地点</span>{{ activity.location }}</span>
+      </div>
+    </div>
+    {% if current_user.role == 'admin' %}
+      <div class="detail-actions">
+        <a class="button button-primary" href="{{ url_for('main.activity_edit', activity_id=activity.id) }}">编辑活动</a>
+        <a class="button button-danger-ghost" href="{{ url_for('main.activity_delete', activity_id=activity.id) }}">删除活动</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="stats-grid" aria-label="活动报名统计">
+    <article class="stat-card">
+      <span class="stat-label">已通过</span>
+      <strong class="stat-value">{{ activity.approved_count }}</strong>
+      <span class="stat-hint">占用正式名额</span>
+    </article>
+    <article class="stat-card">
+      <span class="stat-label">待审核</span>
+      <strong class="stat-value">{{ activity.pending_count }}</strong>
+      <span class="stat-hint">暂不占用名额</span>
+    </article>
+    <article class="stat-card stat-card-accent">
+      <span class="stat-label">剩余名额</span>
+      <strong class="stat-value">{{ activity.remaining }}</strong>
+      <span class="stat-hint">上限 {{ activity.capacity }} 人</span>
+    </article>
+  </section>
+
+  <div class="detail-grid">
+    <div>
+      <section class="panel content-panel">
+        <h2>报名规则</h2>
+        <p>{{ '报名后立即通过。' if activity.policy_type == 'direct' else '报名后进入待审核，管理员批准时才占用名额。' }}</p>
+        <ul class="rule-list">
+          <li>名额按“已通过”报名计算，待审核不占名额。</li>
+          <li>同一学生不能同时保留两条待审核或已通过报名。</li>
+          <li>活动开始后不能再新增报名；取消或拒绝记录会保留。</li>
+          <li>报名结果通过观察者机制写入站内消息；通知失败不会回滚报名。</li>
+        </ul>
+      </section>
+
+      {% if current_user.role == 'student' %}
+        <section class="panel action-panel">
+          <div>
+            <h2>我的报名</h2>
+            {% if my_registration %}
+              <p class="registration-status-line">
+                {{ status_badge(my_registration.status) }}
+                <span class="muted">最近更新 {{ my_registration.updated_at|timestamp_cn }}</span>
+              </p>
+              {% if my_registration.status in ['pending', 'approved'] %}
+                <p class="muted">你可以取消这次报名；取消后历史记录保留，可再次申请。</p>
+              {% elif my_registration.status == 'rejected' %}
+                <p class="muted">上次报名已被拒绝。如仍符合条件，可以重新提交。</p>
+              {% else %}
+                <p class="muted">上次报名已取消。如仍符合条件，可以重新提交。</p>
+              {% endif %}
+            {% else %}
+              <p class="muted">你还没有报名这个活动。</p>
+            {% endif %}
+          </div>
+          <div class="action-buttons">
+            {% if my_registration and my_registration.status in ['pending', 'approved'] %}
+              <form method="post" action="{{ url_for('main.cancel', registration_id=my_registration.id) }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button class="button button-danger-ghost" type="submit">取消报名</button>
+              </form>
+            {% elif started %}
+              <button class="button button-disabled" type="button" disabled>活动已开始，停止报名</button>
+            {% elif activity.is_full %}
+              <button class="button button-disabled" type="button" disabled>名额已满</button>
+            {% else %}
+              <form method="post" action="{{ url_for('main.register', activity_id=activity.id) }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button class="button button-primary" type="submit">
+                  {{ '提交报名，等待审核' if activity.policy_type == 'review' else '立即报名' }}
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
+
+      {% if current_user.role == 'admin' %}
+        <section class="panel content-panel">
+          <div class="section-heading">
+            <div>
+              <h2>报名与审批</h2>
+              <p class="muted">批准时会再次检查名额；只有待审核记录可审批。</p>
+            </div>
+          </div>
+          {% if registrations %}
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr><th>学生</th><th>状态</th><th>提交时间</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  {% for registration in registrations %}
+                    <tr>
+                      <td>
+                        <strong>{{ registration.student_name }}</strong>
+                        <span class="muted tiny">{{ registration.student_id }}</span>
+                      </td>
+                      <td>{{ status_badge(registration.status) }}</td>
+                      <td class="nowrap">{{ registration.created_at|timestamp_cn }}</td>
+                      <td>
+                        {% if registration.status == 'pending' %}
+                          <div class="inline-actions">
+                            <form method="post" action="{{ url_for('main.approve', registration_id=registration.id) }}">
+                              <input type="hidden" name="next" value="{{ request.path }}">
+                              <button class="button button-small button-primary" type="submit">批准</button>
+                            </form>
+                            <form method="post" action="{{ url_for('main.reject', registration_id=registration.id) }}">
+                              <input type="hidden" name="next" value="{{ request.path }}">
+                              <button class="button button-small button-danger-ghost" type="submit">拒绝</button>
+                            </form>
+                          </div>
+                        {% else %}
+                          <span class="muted">—</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="muted empty-inline">还没有学生报名这个活动。</p>
+          {% endif %}
+        </section>
+      {% endif %}
+    </div>
+
+    <aside class="panel side-panel">
+      <h2>活动信息</h2>
+      <dl class="side-list">
+        <div><dt>活动类型</dt><dd>{{ activity.category }}</dd></div>
+        <div><dt>报名方式</dt><dd>{{ activity.policy_type|policy_label }}</dd></div>
+        <div><dt>人数上限</dt><dd>{{ activity.capacity }} 人</dd></div>
+        <div><dt>报名截止</dt><dd>活动开始时</dd></div>
+        <div><dt>创建时间</dt><dd>{{ activity.created_at|timestamp_cn }}</dd></div>
+      </dl>
+    </aside>
+  </div>
+{% endblock %}

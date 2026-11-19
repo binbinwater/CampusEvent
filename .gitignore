@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+tests/_runtime/
+instance/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+.env
+.deploy/
+
+.report-render/
+.ppt-render/

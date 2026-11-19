@@ -1,0 +1,16 @@
+[Unit]
+Description=CampusEvent Flask application
+After=network.target
+
+[Service]
+Type=simple
+User=campusevent
+Group=campusevent
+WorkingDirectory=/opt/campusevent
+Environment=CAMPUSEVENT_SECRET_KEY=replace-with-random-hex
+ExecStart=/opt/campusevent/.venv/bin/gunicorn --workers 2 --threads 2 --bind 127.0.0.1:8001 --access-logfile - --error-logfile - wsgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
